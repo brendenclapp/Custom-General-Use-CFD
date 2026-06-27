@@ -30,7 +30,8 @@ if Print == True:
 
 #-----------------------------------------------------------------
 
-N = 5
+N = 1
+i = 0
 for i in range (N):
     #------- Adjust intial fields u/v in accordance to cell type field ---------------------------------------------------------------------------
 
@@ -58,9 +59,3 @@ for i in range (N):
     SIMPLE.Simple(geo, var, Faces, Fields, Coupler, TDMA)
 
 
-print('---------- final u--------------')
-print(np.array2string(np.flipud(Fields.u.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
-print('---------- final v--------------')
-print(np.array2string(np.flipud(Fields.v.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
-print('---------- final P--------------')
-print(np.array2string(np.flipud(Fields.P.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))

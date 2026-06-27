@@ -364,7 +364,7 @@ def TDMA_u(var, geo, Fields, Faces, TDMA):
 
     # Print Statement ( 1 = PRINT, 0 = SKIP)
 
-    Print = False
+    Print = True
     if Print == True:
 
         Testing.u_psu_final(Fields)

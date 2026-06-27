@@ -44,7 +44,7 @@ def v_psu_final(Fields):
 def P_TDMA(Fields):
 
     print('---------------- P_prime field -------------------------')
-    print(np.array2string(np.flipud(Fields.P_TDMA.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
+    print(np.array2string(np.flipud(Fields.P_TDMA.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}, max_line_width= 1000000000))
     print('\n')
 
 
