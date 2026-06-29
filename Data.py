@@ -23,8 +23,10 @@ class Variables:
 class Fields:        
 
     def __init__(self, geo):
-        self.u = np.full((geo.Nx+1, geo.Ny), 3)                # initial u_field with value set to 3 rn of u velocity
+        self.u = np.full((geo.Nx+1, geo.Ny), 3.0)                # initial u_field with value set to 3 rn of u velocity
+        self.u_old = np.full((geo.Nx+1, geo.Ny), 3)            # previous itteration of the u_field
         self.v = np.full((geo.Nx, geo.Ny+1), 0.3)              # initial v_field with value set to 1 rn of v velocity
+        self.v_old = np.full((geo.Nx, geo.Ny+1), 0.3)          # previous itteration of the v_field
         self.P = np.full((geo.Nx, geo.Ny), 0.5)                # Pressure field
         self.P_prime = np.zeros((geo.Nx, geo.Ny))              # Pressure correction field
         self.u_psu = np.zeros((geo.Nx+1, geo.Ny))              # field that holds psuedo u, the TDMA u solution, which has not yet been pressure corrected

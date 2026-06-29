@@ -38,8 +38,8 @@ for i in range (N):
     TF_FieldAdj.U_Field_adj(geo, var, Faces, Fields)                      # Adjusts the intial u-field in accordance with the cell_type geometry
     TF_FieldAdj.V_Field_adj(geo, var, Faces, Fields)                      # Adjust the intial v-field in accordance with the cell_type geometry
 
-    print('----------u field----------------')
-    print(np.flipud(Fields.u.T))
+    #print('----------u field----------------')
+    #print(np.flipud(Fields.u.T))
     print('----------v field----------------')
     print(np.flipud(Fields.v.T))
 

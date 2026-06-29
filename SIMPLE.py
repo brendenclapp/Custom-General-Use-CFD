@@ -184,7 +184,7 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
         ab[2,:-1] = lower[1:]
         Fields.P_TDMA[i,:] = solve_banded((1,1), ab, RHS)
 
-
+    """
     print('lower')
     print(np.array2string(lower, precision=2))
     print('diag')
@@ -193,9 +193,9 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
     print(np.array2string(upper, precision=2))
     print('RHS')
     print(np.array2string(RHS, precision=2))
-
+    """
     #------------- Testing --------------------------
-    Print = True
+    Print = False
     if Print == True:
         Testing.P_TDMA(Fields)
 
@@ -204,30 +204,223 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
 
 
 
+#=============================================================================================================
+#================================ PRESSURE CORRECTION / RELAXATION ===========================================
+#=============================================================================================================
 
-#======================================== CORRECTION ===================================================
+    Fields.u_old = np.copy(Fields.u)
+    Fields.v_old = np.copy(Fields.v)
 
-
+#========================================== Pressure =====================================================
     for i in range(geo.Nx):
         for j in range(geo.Ny):
 
-            Fields.P[i,j] = Fields.P[i,j] + 0.5*Fields.P_prime[i,j] 
+            # ------- Relaxation ---------
 
+            Fields.P[i,j] = Fields.P[i,j] + 0.3*Fields.P_prime[i,j] 
+
+#======================================= U momentum =======================================================
 
     for i in range (Nx):
         for j in range(Ny-1):
 
-            Fields.u[i,j] = 0.5*Fields.u_psu[i,j] + 0.5*(Coupler.d_we[i,j]*(P_prime[i-1,j]-P_prime[i,j]))
+            # --------- Pressure correction ----------------
+
+            Fields.u[i,j] = Fields.u_psu[i,j] + (Coupler.d_we[i,j]*(P_prime[i-1,j]-P_prime[i,j]))      
+
+            # --------- Under-relaxation ------------------
+
+            #West/East Inlet
+            if Faces.WE_faces[i,j] == 2:                                            
+
+                #Fields.u[i,j] = var.u_inlet
+                continue
+
+            #North Inlet
+            elif Faces.NS_faces[i,j+1] == 2 or Faces.NS_faces[i-1,j+1] == 2:
+
+                continue
+
+            #South Inlet
+            elif Faces.NS_faces[i,j] == 2 or Faces.NS_faces[i-1,j] == 2:
+
+                continue
+            
+            # No inlet, normal relaxation correction
+            else:
+
+                Fields.u[i,j] = 0.7*Fields.u[i,j] + (1 - 0.7)*Fields.u_old[i,j]   
+
+
+    # ------------------ OUTLET COPYING -------------------------------------       
+    # Algorithm is indentical to that of the one used in u_solver
+     
+    i = 0
+    j = 0
+
+    # West/East outlets
+
+    for i in range (geo.Nx+1):
+        for j in range (geo.Ny):
+
+        
+            if Faces.WE_faces[i,j] == 3:
+        
+                if var.Xdirec == 1:                                 # +x flow direc
+
+                    Fields.u[i,j] = Fields.u[i-1,j]         # zero gradient pulled from west ( upstream )
+
+                elif var.Xdirec == 0:                               # -x flow direx
+
+                    Fields.u[i,j] = Fields.u[i+1,j]         # zero gradient pulled from east ( upstream )
+
+
+
+    # North/South outlets 
+    
+    for i in range (geo.Nx):
+        for j in range (geo.Ny):
+
+            if Faces.WE_faces[i,j] != 1:                                      # 1 = Wall
+                    
+                #Checking for southern outlets
+                if Faces.NS_faces[i,j] == 3 or Faces.NS_faces[i-1,j] == 3:
+
+                    # -y flow direc
+                    if var.Ydirec == 0:                                 # -y flow direc
+
+                        Fields.u[i,j] = Fields.u[i,j+1]         # zero gradient pulled from north ( upstream )
+
+                    # +y flow direc
+                    elif var.Ydirec == 1:                                 
+
+                        Fields.u[i,j] = Fields.u[i,j+1]         # zero gradient pulled from north 
+
+
+                # Checking for nothern outlets
+                if Faces.NS_faces[i,j+1] == 3 or Faces.NS_faces[i-1,j+1] == 3:
+                    
+                    # +y flow direc
+                    if var.Ydirec == 1:                                
+
+                        Fields.u[i,j] = Fields.u[i,j-1]         # zero gradient pulled from south ( upstream )
+
+                    # -y flow direc
+                    elif var.Ydirec == 0:                              
+
+                        Fields.u[i,j] = Fields.u[i,j-1]         # zero gradient pulled from south ( upstream )
+
+
+
+#================================= V Momentum =================================================================
 
     for i in range (Nx-1):
         for j in range(Ny):
 
-            Fields.v[i,j] = 0.5*Fields.v_psu[i,j] + 0.5*(Coupler.d_ns[i,j]*(P_prime[i,j-1]-P_prime[i,j]))
+            # ----------- Pressure Correction ---------------------
+
+            Fields.v[i,j] = Fields.v_psu[i,j] + (Coupler.d_ns[i,j]*(P_prime[i,j-1]-P_prime[i,j]))       # pressure correction
+
+            #--------- Under-Relaxation ----------
+
+            #North/South Inlet
+            if Faces.NS_faces[i,j] == 2:
+
+                continue
+
+            #East Inlet
+            elif Faces.WE_faces[i,j] == 2 or Faces.WE_faces[i,j-1] == 2:
+
+                continue
+            
+            #West Inlet
+            elif Faces.WE_faces[i+1,j] == 2 or Faces.WE_faces[i+1,j-1] == 2:
+
+                continue
+            
+            #No inlet, normal relaxation correction
+            else:
+
+                Fields.v[i,j] = 0.7*Fields.v[i,j] + (1 - 0.7)*Fields.v_old[i,j]           
 
 
-    print('---------- final u--------------')
-    print(np.array2string(np.flipud(Fields.u.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
+    # ------------------ OUTLET COPYING -------------------------------------       
+    # Algorithm is indentical to that of the one used in v_solver
+
+    i = 0
+    j = 0
+
+    # North/South outlets
+
+    for i in range (geo.Nx):
+        for j in range (geo.Ny+1):
+
+        
+            if Faces.NS_faces[i,j] == 3:
+            
+                
+                if j == geo.Ny:
+            
+                    if var.Ydirec == 1:                                 # +y flow direc
+
+                        Fields.v[i,j] = Fields.v[i,j-1]         # zero gradient pulled from south 
+
+                    elif var.Ydirec == 0:                               # -y flow direx
+
+                        Fields.v[i,j] = Fields.v[i,j-1]         # zero gradient pulled from south
+
+                elif j == 0:
+
+                    if var.Ydirec == 1:                                 # +y flow direc
+
+                        Fields.v[i,j] = Fields.v[i,j+1]         # zero gradient pulled from south 
+
+                    elif var.Ydirec == 0:                               # -y flow direx
+
+                        Fields.v[i,j] = Fields.v[i,j+1]         # zero gradient pulled from south
+
+                
+    # West/East outlets 
+    
+    for i in range (geo.Nx):
+        for j in range (geo.Ny):
+
+            if Faces.NS_faces[i,j] != 1:                                      # 1 = Wall
+                    
+                #Checking for western outlets
+                if Faces.WE_faces[i,j] == 3 or Faces.WE_faces[i,j-1] == 3:
+
+                    # -x flow direc
+                    if var.Xdirec == 0:                                   # -x flow direc
+
+                        Fields.v[i,j] = Fields.v[i+1,j]         # zero gradient pulled from east ( upstream )
+
+                    # +x flow direc
+                    elif var.Xdirec == 1:                                 
+
+                        Fields.v[i,j] = Fields.v[i+1,j]         # zero gradient pulled from east 
+
+
+                # Checking for eastern outlets
+                if Faces.WE_faces[i+1,j] == 3 or Faces.WE_faces[i+1,j-1] == 3:
+                    
+                    # +x flow direc
+                    if var.Xdirec == 1:                                
+
+                        Fields.v[i,j] = Fields.v[i-1,j]         # zero gradient pulled from west ( upstream )
+
+                    # -x flow direc
+                    elif var.Xdirec == 0:                              
+
+                        Fields.v[i,j] = Fields.v[i-1,j]         # zero gradient pulled from west ( upstream )      
+
+
+#===========================================================================================================================================            
+
+
+    #print('---------- final u--------------')
+    #print(np.array2string(np.flipud(Fields.u.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
     print('---------- final v--------------')
     print(np.array2string(np.flipud(Fields.v.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
-    print('---------- final P--------------')
-    print(np.array2string(np.flipud(Fields.P.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
+    #print('---------- final P--------------')
+    #print(np.array2string(np.flipud(Fields.P.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))

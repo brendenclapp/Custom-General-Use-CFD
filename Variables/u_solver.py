@@ -310,7 +310,7 @@ def TDMA_u(var, geo, Fields, Faces, TDMA):
     # West/East outlets
 
     for i in range (geo.Nx+1):
-        for j in range (geo.Ny-1):
+        for j in range (geo.Ny):
 
         
             if WE_Faces[i,j] == 3:
@@ -364,7 +364,7 @@ def TDMA_u(var, geo, Fields, Faces, TDMA):
 
     # Print Statement ( 1 = PRINT, 0 = SKIP)
 
-    Print = True
+    Print = False
     if Print == True:
 
         Testing.u_psu_final(Fields)

@@ -318,7 +318,7 @@ def TDMA_v(var, geo, Fields, Faces, TDMA):
 
     # North/South outlets
 
-    for i in range (geo.Nx-1):
+    for i in range (geo.Nx):
         for j in range (geo.Ny+1):
 
         
