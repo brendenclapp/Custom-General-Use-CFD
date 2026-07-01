@@ -83,7 +83,7 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
                 
             # CASE 1 --------------------- fully embedded ------------------------------------
             
-            if NS_faces[i,j] == 1 and NS_faces[i,j+1] == 1 and WE_faces[i,j] == 1 and WE_faces[i+1,j] == 1:
+            if Faces.cells[i,j] == False:
 
                 upper[j] = 0
                 diag[j] = 1
@@ -176,28 +176,35 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
 
                     RHS[j] += Coupler.a_EW_P[i,j] * P_prime[i-1,j]
 
-      
+        if i == 7:
+            print('-------------------------------------------------------------------------')
+            print('column', i)
+            print('lower')
+            print(np.array2string(lower, precision=2))
+            print('diag')
+            print(np.array2string(diag, precision=2))
+            print('upper')
+            print(np.array2string(upper, precision=2))
+            print('RHS')
+            print(np.array2string(RHS, precision=2))
+            print('a_EW_P')
+            print(np.array2string(np.flipud(Coupler.a_EW_P.T),formatter={'float_kind': lambda x: f"{x:10.3f}"}, max_line_width= 1000000000))
+            print('a_NS_P')
+            print(np.array2string(np.flipud(Coupler.a_NS_P.T),formatter={'float_kind': lambda x: f"{x:10.3f}"}, max_line_width= 1000000000))
         
         ab = np.zeros((3, geo.Ny))
         ab[0, 1:] = upper[:-1]
         ab[1,:] = diag
         ab[2,:-1] = lower[1:]
-        Fields.P_TDMA[i,:] = solve_banded((1,1), ab, RHS)
+        Fields.P_prime[i,:] = solve_banded((1,1), ab, RHS)
 
-    """
-    print('lower')
-    print(np.array2string(lower, precision=2))
-    print('diag')
-    print(np.array2string(diag, precision=2))
-    print('upper')
-    print(np.array2string(upper, precision=2))
-    print('RHS')
-    print(np.array2string(RHS, precision=2))
-    """
+    
+    
+
     #------------- Testing --------------------------
-    Print = False
+    Print = True
     if Print == True:
-        Testing.P_TDMA(Fields)
+        Testing.P_prime(Fields)
 
         Print = False      
     #----------------------------------------------------
@@ -212,6 +219,7 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
     Fields.v_old = np.copy(Fields.v)
 
 #========================================== Pressure =====================================================
+    print(Fields.P)
     for i in range(geo.Nx):
         for j in range(geo.Ny):
 
@@ -416,11 +424,3 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
 
 
 #===========================================================================================================================================            
-
-
-    #print('---------- final u--------------')
-    #print(np.array2string(np.flipud(Fields.u.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
-    print('---------- final v--------------')
-    print(np.array2string(np.flipud(Fields.v.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
-    #print('---------- final P--------------')
-    #print(np.array2string(np.flipud(Fields.P.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))

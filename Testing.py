@@ -41,10 +41,10 @@ def v_psu_final(Fields):
 
 
 # Field that displays the P_prime correction field
-def P_TDMA(Fields):
+def P_prime(Fields):
 
     print('---------------- P_prime field -------------------------')
-    print(np.array2string(np.flipud(Fields.P_TDMA.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}, max_line_width= 1000000000))
+    print(np.array2string(np.flipud(Fields.P_prime.T),formatter={'float_kind': lambda x: f"{x:8.3f}"}, max_line_width= 1000000000))
     print('\n')
 
 

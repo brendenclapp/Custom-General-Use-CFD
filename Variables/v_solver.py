@@ -383,7 +383,7 @@ def TDMA_v(var, geo, Fields, Faces, TDMA):
 
     
 
-    Print = True
+    Print = False
     if Print == True:
 
         Testing.v_psu_final(Fields)

@@ -12,8 +12,8 @@ class Geometry:
 class Variables:
 
     def __init__(self):
-        self.density = 1000                                 # density of fluid (1000kg/m^3)
-        self.dyn_vis = 1e-3                                 # dynamic viscocity of fluid (Pa*s)
+        self.density = 998                                  # density of fluid (1000kg/m^3)
+        self.dyn_vis = 1e-6                                 # dynamic viscocity of fluid (kPa*s)
         self.u_inlet = 5                                    # u velocity of fluid coming into the system
         self.v_inlet = 0.5                                  # v velocity of fluid coming into the system
         self.Xdirec = 0                                     # boolean switch for fluid moving +x or -x
@@ -27,13 +27,12 @@ class Fields:
         self.u_old = np.full((geo.Nx+1, geo.Ny), 3)            # previous itteration of the u_field
         self.v = np.full((geo.Nx, geo.Ny+1), 0.3)              # initial v_field with value set to 1 rn of v velocity
         self.v_old = np.full((geo.Nx, geo.Ny+1), 0.3)          # previous itteration of the v_field
-        self.P = np.full((geo.Nx, geo.Ny), 0.5)                # Pressure field
+        self.P = np.full((geo.Nx, geo.Ny), 0.0)                  # Pressure field (kPa)
         self.P_prime = np.zeros((geo.Nx, geo.Ny))              # Pressure correction field
         self.u_psu = np.zeros((geo.Nx+1, geo.Ny))              # field that holds psuedo u, the TDMA u solution, which has not yet been pressure corrected
         self.u_TDMA = np.zeros((geo.Nx-1, geo.Ny-2))           # field that holds the smaller column matrix of TDMA results before placed into u_psu 
         self.v_psu = np.zeros((geo.Nx, geo.Ny+1))              # field that holds psuedo v, the TDMA v solution, which has not yet been pressure corrected
         self.v_TDMA = np.zeros((geo.Nx-2, geo.Ny-1))           # field that holds the smaller column matrix of TDMA results before placed into v_psu 
-        self.P_TDMA = np.zeros((geo.Nx, geo.Ny))
 
 class Faces:
 
@@ -68,7 +67,7 @@ class Faces:
 
         self.NS_faces = np.zeros((geo.Nx, geo.Ny + 1))      # horizontal faces for GUI
         self.WE_faces = np.zeros((geo.Nx + 1, geo.Ny))      # vertical faces for GUI
-        self.cells = np.ones((geo.Nx, geo.Ny), dtype=bool)
+        self.cells = np.ones((geo.Nx, geo.Ny), dtype=bool)  # T/F for fluid or walls for scalar CV
 
         # ------------ V SOLVER ------------------------------------------------------------------------------------------------------------
 
