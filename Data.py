@@ -6,8 +6,8 @@ class Geometry:
 
         self.Nx = 8                                         # number of cells x direction
         self.Ny = 8                                         # number of cells in y direction
-        self.deltax = 0.4                                   # length of unit cell (m)
-        self.deltay = 0.1                                   # height of unit cell  (m)
+        self.deltax = 0.025                                 # length of unit cell (m) (0.025m ~ 1in)
+        self.deltay = 0.025                                 # height of unit cell  (m) (0.025m ~ 1in)
 
 class Variables:
 
@@ -15,7 +15,7 @@ class Variables:
         self.density = 998                                  # density of fluid (1000kg/m^3)
         self.dyn_vis = 1e-6                                 # dynamic viscocity of fluid (kPa*s)
         self.u_inlet = 5                                    # u velocity of fluid coming into the system
-        self.v_inlet = 0.5                                  # v velocity of fluid coming into the system
+        self.v_inlet = 0.0                                  # v velocity of fluid coming into the system
         self.Xdirec = 0                                     # boolean switch for fluid moving +x or -x
         self.Ydirec = 0                                     # boolean switch for fluid moving +y or -y
         self.P_anchor = 0                                   # Pressure anchor for pressure solver
@@ -25,8 +25,8 @@ class Fields:
     def __init__(self, geo):
         self.u = np.full((geo.Nx+1, geo.Ny), 3.0)                # initial u_field with value set to 3 rn of u velocity
         self.u_old = np.full((geo.Nx+1, geo.Ny), 3)            # previous itteration of the u_field
-        self.v = np.full((geo.Nx, geo.Ny+1), 0.3)              # initial v_field with value set to 1 rn of v velocity
-        self.v_old = np.full((geo.Nx, geo.Ny+1), 0.3)          # previous itteration of the v_field
+        self.v = np.full((geo.Nx, geo.Ny+1), 0)              # initial v_field with value set to 1 rn of v velocity
+        self.v_old = np.full((geo.Nx, geo.Ny+1), 0.0)          # previous itteration of the v_field
         self.P = np.full((geo.Nx, geo.Ny), 0.0)                  # Pressure field (kPa)
         self.P_prime = np.zeros((geo.Nx, geo.Ny))              # Pressure correction field
         self.u_psu = np.zeros((geo.Nx+1, geo.Ny))              # field that holds psuedo u, the TDMA u solution, which has not yet been pressure corrected

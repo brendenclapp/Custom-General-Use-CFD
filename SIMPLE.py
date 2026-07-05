@@ -49,7 +49,7 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
     for i in range(Nx):
         for j in range(Ny):
 
-            Coupler.b[i,j] = var.density*((Fields.u_psu[i,j]*geo.deltay) + (Fields.u_psu[i+1,j]*geo.deltay) + (Fields.v_psu[i,j]*geo.deltax) + (Fields.v_psu[i,j+1]*geo.deltax))
+            Coupler.b[i,j] = var.density*(((Fields.u_psu[i,j]*geo.deltay) - (Fields.u_psu[i+1,j]*geo.deltay)) + ((Fields.v_psu[i,j]*geo.deltax) - (Fields.v_psu[i,j+1]*geo.deltax)))
     
     for i in range (Nx):
         for j in range (Ny):
@@ -57,7 +57,6 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
             Coupler.a_P_P[i,j] = Coupler.a_EW_P[i,j] + Coupler.a_EW_P[i+1,j] + Coupler.a_NS_P[i,j] + Coupler.a_NS_P[i,j+1]
 
     
-
     #--------------------- TDMA P' --------------------------------
     # -------------------------------------------------------------
 
@@ -172,11 +171,14 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
 
                     RHS[j] += Coupler.a_EW_P[i,j] * 0
 
-                else:                                           # 0 = Fluid
+                else:                                           # 0 = Fluid 
 
-                    RHS[j] += Coupler.a_EW_P[i,j] * P_prime[i-1,j]
+                    if i > 0:
 
-        if i == 7:
+                        RHS[j] += Coupler.a_EW_P[i,j] * P_prime[i-1,j]
+
+        
+            """
             print('-------------------------------------------------------------------------')
             print('column', i)
             print('lower')
@@ -191,18 +193,22 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
             print(np.array2string(np.flipud(Coupler.a_EW_P.T),formatter={'float_kind': lambda x: f"{x:10.3f}"}, max_line_width= 1000000000))
             print('a_NS_P')
             print(np.array2string(np.flipud(Coupler.a_NS_P.T),formatter={'float_kind': lambda x: f"{x:10.3f}"}, max_line_width= 1000000000))
-        
+            print('a_P_P')
+            print(np.array2string(np.flipud(Coupler.a_P_P.T),formatter={'float_kind': lambda x: f"{x:10.3f}"}, max_line_width= 1000000000))
+            """
+       
         ab = np.zeros((3, geo.Ny))
         ab[0, 1:] = upper[:-1]
         ab[1,:] = diag
         ab[2,:-1] = lower[1:]
         Fields.P_prime[i,:] = solve_banded((1,1), ab, RHS)
 
-    
-    
+    print('b')
+    print(np.array2string(np.flipud(Coupler.b.T),formatter={'float_kind': lambda x: f"{x:10.3f}"}, max_line_width= 1000000000))
+            
 
     #------------- Testing --------------------------
-    Print = True
+    Print = False
     if Print == True:
         Testing.P_prime(Fields)
 
@@ -232,32 +238,39 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
     for i in range (Nx):
         for j in range(Ny-1):
 
-            # --------- Pressure correction ----------------
-
-            Fields.u[i,j] = Fields.u_psu[i,j] + (Coupler.d_we[i,j]*(P_prime[i-1,j]-P_prime[i,j]))      
-
-            # --------- Under-relaxation ------------------
-
-            #West/East Inlet
-            if Faces.WE_faces[i,j] == 2:                                            
-
-                #Fields.u[i,j] = var.u_inlet
-                continue
-
-            #North Inlet
-            elif Faces.NS_faces[i,j+1] == 2 or Faces.NS_faces[i-1,j+1] == 2:
+            #Skipping Walls for pressure / relaxation 
+            if Fields.u[i,j] == 0:
 
                 continue
 
-            #South Inlet
-            elif Faces.NS_faces[i,j] == 2 or Faces.NS_faces[i-1,j] == 2:
-
-                continue
-            
-            # No inlet, normal relaxation correction
             else:
 
-                Fields.u[i,j] = 0.7*Fields.u[i,j] + (1 - 0.7)*Fields.u_old[i,j]   
+                # --------- Pressure correction ----------------
+
+                Fields.u[i,j] = Fields.u_psu[i,j] + (Coupler.d_we[i,j]*(P_prime[i-1,j]-P_prime[i,j]))      
+
+                # --------- Under-relaxation ------------------
+
+                #West/East Inlet
+                if Faces.WE_faces[i,j] == 2:                                            
+
+                    #Fields.u[i,j] = var.u_inlet
+                    continue
+
+                #North Inlet
+                elif Faces.NS_faces[i,j+1] == 2 or Faces.NS_faces[i-1,j+1] == 2:
+
+                    continue
+
+                #South Inlet
+                elif Faces.NS_faces[i,j] == 2 or Faces.NS_faces[i-1,j] == 2:
+
+                    continue
+                
+                # No inlet, normal relaxation correction
+                else:
+
+                    Fields.u[i,j] = 0.7*Fields.u[i,j] + (1 - 0.7)*Fields.u_old[i,j]   
 
 
     # ------------------ OUTLET COPYING -------------------------------------       
@@ -325,31 +338,38 @@ def Simple(geo, var, Faces, Fields, Coupler, TDMA):
     for i in range (Nx-1):
         for j in range(Ny):
 
-            # ----------- Pressure Correction ---------------------
-
-            Fields.v[i,j] = Fields.v_psu[i,j] + (Coupler.d_ns[i,j]*(P_prime[i,j-1]-P_prime[i,j]))       # pressure correction
-
-            #--------- Under-Relaxation ----------
-
-            #North/South Inlet
-            if Faces.NS_faces[i,j] == 2:
-
+            #Skipping Walls for pressure / relaxation
+            if Fields.v[i,j] == 0:
+                          
                 continue
 
-            #East Inlet
-            elif Faces.WE_faces[i,j] == 2 or Faces.WE_faces[i,j-1] == 2:
-
-                continue
-            
-            #West Inlet
-            elif Faces.WE_faces[i+1,j] == 2 or Faces.WE_faces[i+1,j-1] == 2:
-
-                continue
-            
-            #No inlet, normal relaxation correction
             else:
 
-                Fields.v[i,j] = 0.7*Fields.v[i,j] + (1 - 0.7)*Fields.v_old[i,j]           
+                # ----------- Pressure Correction ---------------------
+                
+                Fields.v[i,j] = Fields.v_psu[i,j] + (Coupler.d_ns[i,j]*(P_prime[i,j-1]-P_prime[i,j]))       # pressure correction
+
+                #--------- Under-Relaxation ----------
+
+                #North/South Inlet
+                if Faces.NS_faces[i,j] == 2:
+
+                    continue
+                
+                #East Inlet
+                elif Faces.WE_faces[i,j] == 2 or Faces.WE_faces[i,j-1] == 2:
+
+                    continue
+                
+                #West Inlet
+                elif Faces.WE_faces[i+1,j] == 2 or Faces.WE_faces[i+1,j-1] == 2:
+
+                    continue
+                
+                #No inlet, normal relaxation correction
+                else:
+
+                    Fields.v[i,j] = 0.7*Fields.v[i,j] + (1 - 0.7)*Fields.v_old[i,j]           
 
 
     # ------------------ OUTLET COPYING -------------------------------------       

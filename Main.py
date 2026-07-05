@@ -61,11 +61,12 @@ for i in range (N):
     #----------------------- COUPLER -------------------------------------------------------
 
     SIMPLE.Simple(geo, var, Faces, Fields, Coupler, TDMA)
-
+    
     print('itt', i)
-    #print('---------- final u--------------')
-    #print(np.array2string(np.flipud(Fields.u.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
-    #print('---------- final v--------------')
-    #print(np.array2string(np.flipud(Fields.v.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
+    print('---------- final u--------------')
+    print(np.array2string(np.flipud(Fields.u.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
+    print('---------- final v--------------')
+    print(np.array2string(np.flipud(Fields.v.T),formatter={'float_kind': lambda x: f"{x:6.3f}"}))
     print('---------- final P--------------')
     print(np.array2string(np.flipud(Fields.P.T),formatter={'float_kind': lambda x: f"{x:10.3f}"}, max_line_width= 1000000000))
+    

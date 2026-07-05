@@ -37,8 +37,7 @@ def TVD_u(geo, var, Fields, Faces):
                 Faces.UD_we[i,j] = 0
 
             else:
-                Faces.UD_we[i,j] = var.dyn_vis * geo.deltay / geo.deltax                # D = (μ/δ) * A
-
+                Faces.UD_we[i,j] = ( var.dyn_vis * geo.deltay )/geo.deltax                # D = (μ/δ) * A
 
     #Northern Diffusion
     for i in range (Nx+1):                                  # in a u staggered grid, u nodes will only ever be half distance (wall adjacent) from a NS wall 
@@ -103,14 +102,14 @@ def TVD_u(geo, var, Fields, Faces):
                 Faces.UD_s[i,j] = var.dyn_vis * geo.deltax / geo.deltay                  # D_fullinterior = (μ/δ) * A
 
     # Diffusion Face Field Print Statements
-    """     
+        
     print('--------------UD_we------------------')
     print(np.flipud(Faces.UD_we.T))
     print('--------------UD_n--------------')
     print(np.flipud(Faces.UD_n.T))
     print('--------------UD_s--------------')
     print(np.flipud(Faces.UD_s.T))
-    """
+    
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------
 #-------- staggered u faces, formed from averaging the scalar centered faces -------------------------------------------------------------------------
@@ -142,7 +141,23 @@ def TVD_u(geo, var, Fields, Faces):
 
             #INSERT TVD CORRECTION TERM ALGORITHM HERE
             VanLeer.Vanleer_u(i, j, var, geo, Fields, Faces)
-
+    
+    
+    print('UD_we')
+    print(np.array2string(np.flipud(Faces.UD_we.T),formatter={'float_kind': lambda x: f"{x:8.3f}"}, max_line_width= 1000000000))
+    print('Fe_u')
+    print(np.array2string(np.flipud(Faces.Fe_u.T),formatter={'float_kind': lambda x: f"{x:8.3f}"}, max_line_width= 1000000000))
+    print('a_w_u')
+    print(np.array2string(np.flipud(Faces.a_w_u.T),formatter={'float_kind': lambda x: f"{x:8.3f}"}, max_line_width= 1000000000))
+    print('a_e_u')
+    print(np.array2string(np.flipud(Faces.a_e_u.T),formatter={'float_kind': lambda x: f"{x:8.3f}"}, max_line_width= 1000000000))
+    print('a_n_u')
+    print(np.array2string(np.flipud(Faces.a_n_u.T),formatter={'float_kind': lambda x: f"{x:8.3f}"}, max_line_width= 1000000000))
+    print('a_s_u')
+    print(np.array2string(np.flipud(Faces.a_s_u.T),formatter={'float_kind': lambda x: f"{x:8.3f}"}, max_line_width= 1000000000))
+    print('a_P_u')
+    print(np.array2string(np.flipud(Faces.a_P_u.T),formatter={'float_kind': lambda x: f"{x:8.3f}"}, max_line_width= 1000000000))
+    
 
 #===========================================================================================================|
 # ----------------------------------------------TDMA -------------------------------------------------------|
@@ -158,7 +173,6 @@ def TDMA_u(var, geo, Fields, Faces, TDMA):
     diag = TDMA.diag
     lower = TDMA.lower
     RHS = TDMA.RHS
-
     
     for i in range (1, geo.Nx):
 
@@ -216,7 +230,7 @@ def TDMA_u(var, geo, Fields, Faces, TDMA):
                 elif WE_Faces[i,j-1] == 2:  # 2 = inlet
 
                     lower[k] = 0
-                    RHS[k] += Faces.a_s_u[i,j]*u[i,j-1]
+                    RHS[k] += Faces.a_s_u[i,j]*var.u_inlet
                 
                 elif WE_Faces[i,j-1] == 3:    # 3 = outlet
 
@@ -226,15 +240,15 @@ def TDMA_u(var, geo, Fields, Faces, TDMA):
 
                 # ---------------------- Checking West ---------------------------------------------
 
-                if WE_Faces[i-1,j] == 1:                       # 1 = Wall
+                if WE_Faces[i,j] == 1:                          # 1 = Wall
 
                     RHS[k] += 0
 
-                elif WE_Faces[i-1,j] == 2:                     # 2 = inlet
+                elif WE_Faces[i,j] == 2:                        # 2 = inlet
 
-                    RHS[k] += Faces.a_w_u[i,j]*u[i-1,j]
+                    RHS[k] += Faces.a_w_u[i,j]*var.u_inlet
 
-                elif WE_Faces[i-1,j] == 3:                     # 3 = outlet
+                elif WE_Faces[i,j] == 3:                        # 3 = outlet
 
                     RHS[k] += Faces.a_w_u[i,j]*u[i,j]
                 
@@ -244,24 +258,35 @@ def TDMA_u(var, geo, Fields, Faces, TDMA):
 
                 # ------------------------- Checking East ------------------------------------------
 
-                if WE_Faces[i,j] == 1:
+                if WE_Faces[i+1,j] == 1:                        # 1 = Wall
 
                     RHS[k] += 0
 
-                elif WE_Faces[i,j] == 2:
+                elif WE_Faces[i+1,j] == 2:                      # 2 = inlet
 
-                    RHS[k] += Faces.a_e_u[i,j]*u[i+1,j]
+                    RHS[k] += Faces.a_e_u[i,j]*var.u_inlet
 
-                elif WE_Faces[i,j] == 3:
+                elif WE_Faces[i+1,j] == 3:                      # 3 = outlet
 
-                    RHS[k] += Faces.a_w_u[i,j]*u[i,j]
+                    RHS[k] += Faces.a_e_u[i,j]*u[i,j]
 
                 else:                                           # 0 = Fluid
 
                     RHS[k] += Faces.a_e_u[i,j]*u[i+1,j]
+        
 
-
-
+          
+        print('-------------------------------------------------------------------------')
+        print('column', i)
+        print('lower')
+        print(np.array2string(lower, precision=2))
+        print('diag')
+        print(np.array2string(diag, precision=2))
+        print('upper')
+        print(np.array2string(upper, precision=2))
+        print('RHS')
+        print(np.array2string(RHS, precision=2))
+        
         # MATRIX SOLVER ( in i loop, outside j loop)
 
         i_tdma = i -1
@@ -274,7 +299,7 @@ def TDMA_u(var, geo, Fields, Faces, TDMA):
 
 
     #------------- Testing --------------------------
-    Print = False
+    Print = True
     if Print == True:
         Testing.u_TDMA(Fields)
 
@@ -283,11 +308,9 @@ def TDMA_u(var, geo, Fields, Faces, TDMA):
 
 
     # BOUNDARY ADDER
-
     for i in range (1, geo.Nx):
         for j in range(1, geo.Ny-1):
-
-            Fields.u_psu[i,j] = Fields.u_TDMA[i-1,j-1]
+            Fields.u_psu[i,j] = Fields.u_TDMA[i,j]
 
 
     Fields.u_psu[:,0] = Fields.u[:,0]
@@ -296,7 +319,7 @@ def TDMA_u(var, geo, Fields, Faces, TDMA):
     Fields.u_psu[geo.Nx,:] = Fields.u[geo.Nx,:]
 
     #------------------ Testing ------------------------
-    Print = False
+    Print = True
     if Print == True:
         Testing.u_psu_boundaries(Fields)
 
