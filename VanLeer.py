@@ -293,7 +293,7 @@ def Vanleer_v(i , j, var, geo, Fields, Faces):
 
  # X CASE 2 ---------------------------------------------        -x  flow      ------------------------------------------------------------------
 
-    elif Faces.Fw_v[i,j] < 0 and Faces.Fe_v[i.j] < 0:
+    elif Faces.Fw_v[i,j] < 0 and Faces.Fe_v[i,j] < 0:
 
         var.Xdirec = 0
 
